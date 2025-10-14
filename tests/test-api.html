@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>API Test</h1>
+    <button onclick="testAddProduct()">Test Add Product</button>
+    <div id="result"></div>
+
+    <script>
+        async function testAddProduct() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = 'Testing...';
+            
+            try {
+                const response = await fetch('api/products.php', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        name: 'Test Product',
+                        description: 'This is a test product',
+                        price: 100000,
+                        category: 'Test',
+                        image: '/assets/img/product-default.jpg',
+                        inStock: true,
+                        whatsappNumber: '6281234567890'
+                    })
+                });
+                
+                const responseText = await response.text();
+                resultDiv.innerHTML = `<h2>Response:</h2><pre>${responseText}</pre>`;
+                
+                try {
+                    const data = JSON.parse(responseText);
+                    resultDiv.innerHTML += `<h2>Parsed JSON:</h2><pre>${JSON.stringify(data, null, 2)}</pre>`;
+                } catch (e) {
+                    resultDiv.innerHTML += `<h2>JSON Parse Error:</h2><p>${e.message}</p>`;
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `<h2>Error:</h2><p>${error.message}</p>`;
+            }
+        }
+    </script>
+</body>
+</html>

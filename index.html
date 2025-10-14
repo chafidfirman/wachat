@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ChatCart Web - E-commerce via WhatsApp</title>
+    <link rel="stylesheet" href="assets/css/main.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+</head>
+<body>
+    <!-- Header Section -->
+    <header class="bg-white shadow-sm">
+        <div class="container">
+            <nav class="navbar navbar-expand-lg navbar-light bg-white shadow-sm">
+                <a class="navbar-brand" href="./">
+                    <i class="fas fa-shopping-cart"></i> ChatCart Web
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav ms-auto">
+                        <li class="nav-item">
+                            <a class="nav-link active" href="./">Home</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="about.html">About</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="contact.html">Contact</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" href="public/index.php?path=admin/login">Admin</a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="container">
+            <h1>Belanja Cepat, Chat Langsung via WhatsApp!</h1>
+            <p>Jelajahi produk kami dan pesan langsung melalui WhatsApp</p>
+            <a href="#products-section" class="btn btn-primary btn-lg">Mulai Belanja</a>
+        </div>
+    </section>
+
+    <!-- Products Section -->
+    <section class="products" id="products-section">
+        <div class="container">
+            <!-- Limited Stock Products Section -->
+            <div class="section-limited">
+                <h2>Produk Limited</h2>
+                <div class="product-grid" id="limitedProducts">
+                    <!-- Limited stock products will be loaded dynamically -->
+                    <p>Loading limited products...</p>
+                </div>
+            </div>
+
+            <!-- Best Seller Products Section -->
+            <div class="section-best-seller">
+                <h2>Produk Terlaris</h2>
+                <div class="product-grid" id="bestSellerProducts">
+                    <!-- Best seller products will be loaded dynamically -->
+                    <p>Loading best seller products...</p>
+                </div>
+            </div>
+
+            <!-- All Products Section -->
+            <div class="section-all-products">
+                <h2>Semua Produk Kami</h2>
+                <div class="product-grid" id="allProducts">
+                    <!-- All products will be loaded dynamically -->
+                    <p>Loading all products...</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-dark text-white py-4 mt-5">
+        <div class="container">
+            <div class="row">
+                <div class="col-md-6">
+                    <h5>ChatCart Web</h5>
+                    <p>Simple e-commerce solution for UMKM businesses in Indonesia.</p>
+                </div>
+                <div class="col-md-6">
+                    <h5>Contact</h5>
+                    <ul class="list-unstyled">
+                        <li><i class="fas fa-envelope"></i> info@chatcart.web</li>
+                        <li><i class="fab fa-whatsapp"></i> +62 812 3456 7890</li>
+                    </ul>
+                </div>
+            </div>
+            <hr>
+            <div class="text-center">
+                <p>&copy; 2025 ChatCart Web. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- JavaScript -->
+    <script src="assets/js/script.js"></script>
+    <script>
+        // Function to create product card HTML with badges
+        function createProductCardWithBadge(product, badgeType) {
+            // Use default image if no image is specified or if image is empty
+            const productImage = product.image && product.image.trim() !== '' 
+                ? product.image 
+                : 'assets/img/product-default.jpg';
+                
+            // Determine stock status display
+            let stockStatus = '';
+            let stockClass = '';
+            if (!product.inStock) {
+                stockStatus = 'Out of Stock';
+                stockClass = 'out-of-stock';
+            } else if (product.stockQuantity !== undefined && product.stockQuantity !== null) {
+                if (product.stockQuantity <= 0) {
+                    stockStatus = 'Out of Stock';
+                    stockClass = 'out-of-stock';
+                } else if (product.stockQuantity <= 5) {
+                    stockStatus = `Only ${product.stockQuantity} left!`;
+                    stockClass = 'low-stock';
+                } else {
+                    stockStatus = `${product.stockQuantity} in stock`;
+                }
+            } else {
+                stockStatus = 'In Stock';
+            }
+            
+            // Determine badge text
+            let badgeText = '';
+            if (badgeType === 'limited') {
+                badgeText = product.stockQuantity <= 3 ? `SISA ${product.stockQuantity} PCS!` : 'LIMITED STOCK!';
+            } else if (badgeType === 'best-seller') {
+                badgeText = 'Best Seller';
+            }
+            
+            return `
+                <div class="product-card">
+                    ${badgeText ? `<div class="product-badge ${badgeType}">${badgeText}</div>` : ''}
+                    <div class="product-image">
+                        <img src="${productImage}" alt="${product.name}" onerror="this.src='assets/img/product-default.jpg'">
+                    </div>
+                    <div class="product-info">
+                        <h3>${product.name}</h3>
+                        <div class="product-price">${formatPrice(product.price)}</div>
+                        <div class="product-meta">
+                            <span class="${stockClass}">
+                                ${stockStatus}
+                            </span>
+                        </div>
+                        <div class="product-actions">
+                            <a href="public/index.php?path=product/${product.id}" class="action-btn detail-btn">
+                                <i class="fas fa-info-circle"></i> Detail
+                            </a>
+                            <button class="action-btn whatsapp-btn ${!product.inStock || (product.stockQuantity !== null && product.stockQuantity <= 0) ? 'out-of-stock-btn' : ''}" 
+                                    onclick="orderViaWhatsApp(${product.id})"
+                                    ${!product.inStock || (product.stockQuantity !== null && product.stockQuantity <= 0) ? 'disabled' : ''}>
+                                <i class="fab fa-whatsapp"></i> Chat & Beli
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
+        // Function to render limited stock products
+        function renderLimitedProducts(productsToShow) {
+            const productGrid = document.getElementById('limitedProducts');
+            if (productsToShow.length === 0) {
+                productGrid.innerHTML = '<p>Tidak ada produk limited saat ini.</p>';
+                return;
+            }
+            
+            productGrid.innerHTML = productsToShow.map(product => createProductCardWithBadge(product, 'limited')).join('');
+        }
+
+        // Function to render best seller products
+        function renderBestSellerProducts(productsToShow) {
+            const productGrid = document.getElementById('bestSellerProducts');
+            if (productsToShow.length === 0) {
+                productGrid.innerHTML = '<p>Tidak ada produk terlaris saat ini.</p>';
+                return;
+            }
+            
+            productGrid.innerHTML = productsToShow.map(product => createProductCardWithBadge(product, 'best-seller')).join('');
+        }
+
+        // Function to render all products
+        function renderAllProducts(productsToShow) {
+            const productGrid = document.getElementById('allProducts');
+            if (productsToShow.length === 0) {
+                productGrid.innerHTML = '<p>Tidak ada produk tersedia.</p>';
+                return;
+            }
+            
+            productGrid.innerHTML = productsToShow.map(product => createProductCardWithBadge(product, '')).join('');
+        }
+
+        // Function to fetch and display products
+        async function loadProducts() {
+            try {
+                const response = await fetch('api/v1/products');
+                const result = await response.json();
+                
+                if (result.success) {
+                    const allProducts = result.data;
+                    
+                    // Filter limited stock products (stock <= 5)
+                    const limitedProducts = allProducts.filter(product => 
+                        product.stock_quantity !== null && 
+                        product.stock_quantity <= 5 && 
+                        product.stock_quantity > 0
+                    ).slice(0, 4); // Limit to 4 products
+                    
+                    // Filter best seller products (you can define your own logic here)
+                    const bestSellerProducts = allProducts.filter(product => 
+                        product.category_id == 1 // Example: products from category 1
+                    ).slice(0, 4); // Limit to 4 products
+                    
+                    // Render products
+                    renderLimitedProducts(limitedProducts);
+                    renderBestSellerProducts(bestSellerProducts);
+                    renderAllProducts(allProducts);
+                } else {
+                    document.getElementById('limitedProducts').innerHTML = '<p>Error loading products.</p>';
+                    document.getElementById('bestSellerProducts').innerHTML = '<p>Error loading products.</p>';
+                    document.getElementById('allProducts').innerHTML = '<p>Error loading products.</p>';
+                }
+            } catch (error) {
+                console.error('Error fetching products:', error);
+                document.getElementById('limitedProducts').innerHTML = '<p>Error loading products.</p>';
+                document.getElementById('bestSellerProducts').innerHTML = '<p>Error loading products.</p>';
+                document.getElementById('allProducts').innerHTML = '<p>Error loading products.</p>';
+            }
+        }
+
+        // Load products when page loads
+        document.addEventListener('DOMContentLoaded', function() {
+            loadProducts();
+        });
+
+        // Function to format price in IDR
+        function formatPrice(price) {
+            return new Intl.NumberFormat('id-ID', {
+                style: 'currency',
+                currency: 'IDR'
+            }).format(price);
+        }
+
+        // Function to order via WhatsApp
+        function orderViaWhatsApp(productId) {
+            // In a real implementation, you would fetch the product details
+            // and generate a proper WhatsApp message
+            alert('Order via WhatsApp for product ID: ' + productId);
+        }
+    </script>
+</body>
+</html>

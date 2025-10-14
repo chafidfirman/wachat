@@ -1,0 +1,9 @@
+[2025-10-12 06:18:27] QUERY EXECUTED: SELECT * FROM products WHERE id = ? | Params: [123]
+[2025-10-12 06:33:27] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 06:34:39] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 06:34:40] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 06:36:06] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 06:46:30] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 06:56:50] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 07:00:38] QUERY EXECUTED: Loading homepage products | Params: No parameters
+[2025-10-12 07:00:45] QUERY EXECUTED: Loading homepage products | Params: No parameters

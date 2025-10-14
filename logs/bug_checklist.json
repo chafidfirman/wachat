@@ -1,0 +1,47 @@
+{
+    "timestamp": "2025-10-12 06:18:27",
+    "bugs": [
+        {
+            "id": 1,
+            "category": "UI Responsiveness",
+            "description": "Check if all UI elements respond to user interactions",
+            "status": "Open",
+            "priority": "High"
+        },
+        {
+            "id": 2,
+            "category": "Button Functionality",
+            "description": "Verify all buttons perform their intended actions",
+            "status": "Open",
+            "priority": "High"
+        },
+        {
+            "id": 3,
+            "category": "Input Validation",
+            "description": "Test all form inputs for proper validation",
+            "status": "Open",
+            "priority": "Medium"
+        },
+        {
+            "id": 4,
+            "category": "Page Availability",
+            "description": "Check for broken links or 404 errors",
+            "status": "Open",
+            "priority": "High"
+        },
+        {
+            "id": 5,
+            "category": "Database Operations",
+            "description": "Verify all database queries execute correctly",
+            "status": "Open",
+            "priority": "High"
+        },
+        {
+            "id": 6,
+            "category": "API Responses",
+            "description": "Ensure all API endpoints return proper responses",
+            "status": "Open",
+            "priority": "Medium"
+        }
+    ]
+}
