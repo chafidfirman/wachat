@@ -1,4 +1,5 @@
 <?php
+require_once 'url_helper.php';
 /**
  * Components Helper Functions
  * Provides reusable UI components for consistent rendering across the application
