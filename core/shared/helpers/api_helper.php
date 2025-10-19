@@ -28,6 +28,11 @@ if (!function_exists('getallheaders')) {
  * @param int $code HTTP status code (default: 200)
  */
 function sendSuccessResponse($data = null, $message = '', $code = 200) {
+    // Ensure we don't have any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
     http_response_code($code);
     
     $response = [
@@ -44,7 +49,21 @@ function sendSuccessResponse($data = null, $message = '', $code = 200) {
         $response['code'] = $code;
     }
     
-    echo json_encode($response, JSON_PRETTY_PRINT);
+    // Ensure proper JSON encoding
+    $json = json_encode($response, JSON_PRETTY_PRINT);
+    if ($json === false) {
+        // Fallback if JSON encoding fails
+        error_log("JSON encoding failed in sendSuccessResponse: " . json_last_error_msg());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Internal server error',
+            'timestamp' => date('c')
+        ]);
+    } else {
+        echo $json;
+    }
+    
     exit;
 }
 
@@ -53,24 +72,52 @@ function sendSuccessResponse($data = null, $message = '', $code = 200) {
  * @param string $message Error message
  * @param int $code HTTP status code (default: 400)
  * @param mixed $data Optional additional data
+ * @param string $context Optional context information
  */
-function sendErrorResponse($message, $code = 400, $data = null) {
+function sendErrorResponse($message, $code = 400, $data = null, $context = '') {
+    // Ensure we don't have any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
     http_response_code($code);
     
     $response = [
         'success' => false,
-        'timestamp' => date('c'), // ISO 8601 format
+        'timestamp' => date('c'), // ISO 8601 format,
         'error' => [
             'code' => $code,
             'message' => $message
         ]
     ];
     
+    // Add context if provided
+    if (!empty($context)) {
+        $response['error']['context'] = $context;
+    }
+    
     if ($data !== null) {
         $response['data'] = $data;
     }
     
-    echo json_encode($response, JSON_PRETTY_PRINT);
+    // Ensure proper JSON encoding
+    $json = json_encode($response, JSON_PRETTY_PRINT);
+    if ($json === false) {
+        // Fallback if JSON encoding fails
+        error_log("JSON encoding failed in sendErrorResponse: " . json_last_error_msg());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Internal server error',
+            'timestamp' => date('c')
+        ]);
+    } else {
+        echo $json;
+    }
+    
+    // Log the error
+    error_log("API Error [{$code}]: {$message}" . (!empty($context) ? " (Context: {$context})" : ""));
+    
     exit;
 }
 
@@ -80,6 +127,11 @@ function sendErrorResponse($message, $code = 400, $data = null) {
  * @param string $message Optional message
  */
 function sendValidationErrorResponse($errors, $message = 'Validation failed') {
+    // Ensure we don't have any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
     http_response_code(422); // Unprocessable Entity
     
     $response = [
@@ -92,7 +144,24 @@ function sendValidationErrorResponse($errors, $message = 'Validation failed') {
         ]
     ];
     
-    echo json_encode($response, JSON_PRETTY_PRINT);
+    // Ensure proper JSON encoding
+    $json = json_encode($response, JSON_PRETTY_PRINT);
+    if ($json === false) {
+        // Fallback if JSON encoding fails
+        error_log("JSON encoding failed in sendValidationErrorResponse: " . json_last_error_msg());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Internal server error',
+            'timestamp' => date('c')
+        ]);
+    } else {
+        echo $json;
+    }
+    
+    // Log the validation errors
+    error_log("Validation Error: " . json_encode($errors));
+    
     exit;
 }
 
@@ -105,6 +174,11 @@ function sendValidationErrorResponse($errors, $message = 'Validation failed') {
  * @param string $message Optional message
  */
 function sendPaginatedResponse($data, $total, $page, $limit, $message = '') {
+    // Ensure we don't have any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
     $totalPages = ceil($total / $limit);
     
     $response = [
@@ -125,8 +199,22 @@ function sendPaginatedResponse($data, $total, $page, $limit, $message = '') {
         $response['message'] = $message;
     }
     
-    http_response_code(200);
-    echo json_encode($response, JSON_PRETTY_PRINT);
+    // Ensure proper JSON encoding
+    $json = json_encode($response, JSON_PRETTY_PRINT);
+    if ($json === false) {
+        // Fallback if JSON encoding fails
+        error_log("JSON encoding failed in sendPaginatedResponse: " . json_last_error_msg());
+        http_response_code(500);
+        echo json_encode([
+            'success' => false,
+            'error' => 'Internal server error',
+            'timestamp' => date('c')
+        ]);
+    } else {
+        http_response_code(200);
+        echo $json;
+    }
+    
     exit;
 }
 
@@ -144,6 +232,7 @@ function parseJsonInput() {
     $data = json_decode($input, true);
     
     if (json_last_error() !== JSON_ERROR_NONE) {
+        error_log("JSON parsing error: " . json_last_error_msg());
         return null;
     }
     
@@ -173,6 +262,11 @@ function isRequestMethodAllowed($allowedMethods) {
  * @param array $allowedMethods Array of allowed HTTP methods
  */
 function sendMethodNotAllowedResponse($allowedMethods = ['GET']) {
+    // Ensure we don't have any previous output
+    if (ob_get_level()) {
+        ob_clean();
+    }
+    
     header('Allow: ' . implode(', ', $allowedMethods));
     sendErrorResponse('Method not allowed. Allowed methods: ' . implode(', ', $allowedMethods), 405);
 }
@@ -189,6 +283,13 @@ function sanitizeOutput($data) {
         }
     } elseif (is_string($data)) {
         $data = htmlspecialchars($data, ENT_QUOTES, 'UTF-8');
+    } elseif (is_numeric($data)) {
+        // Ensure numeric values are properly typed
+        if (is_float($data) || is_double($data)) {
+            $data = (float)$data;
+        } else {
+            $data = (int)$data;
+        }
     }
     
     return $data;

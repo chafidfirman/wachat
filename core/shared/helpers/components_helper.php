@@ -9,14 +9,37 @@
  * @param array $product The product data
  */
 function renderProductCard($product) {
-    // Extract product data with defaults
+    // Extract product data with defaults and normalize
     $id = $product['id'] ?? 0;
     $name = $product['name'] ?? 'Untitled Product';
     $description = $product['description'] ?? '';
     $price = $product['price'] ?? 0;
-    $image = !empty($product['images']) ? json_decode($product['images'], true)['image'] : 
-           (!empty($product['image']) ? $product['image'] : base_url('assets/img/product-default.jpg'));
-    $stock = $product['stock'] ?? null;
+    
+    // Handle image path - normalize it properly using the same logic as in Product model
+    $image = '';
+    if (!empty($product['images'])) {
+        $images = json_decode($product['images'], true);
+        if (is_array($images) && isset($images['image'])) {
+            $image = $images['image'];
+        }
+    } else if (!empty($product['image'])) {
+        $image = $product['image'];
+    }
+    
+    // Normalize the image path using the same logic as in Product model
+    if (empty($image)) {
+        $image = 'assets/img/product-default.jpg';
+    } else if (strpos($image, 'assets/') === 0) {
+        // If it's already a full path with assets/, return as is
+        $image = $image;
+    } else if (strpos($image, 'assets/') === false) {
+        // If it's a relative path, prepend assets/
+        $image = 'assets/' . ltrim($image, '/');
+    }
+    
+    // Handle stock data normalization
+    $stock = $product['stockQuantity'] ?? $product['stock'] ?? null;
+    $inStock = $product['inStock'] ?? $product['in_stock'] ?? true;
     
     // Determine stock status
     $stockStatus = '';
@@ -25,7 +48,7 @@ function renderProductCard($product) {
     if ($stock !== null && $stock <= 5 && $stock > 0) {
         $stockStatus = "Only {$stock} left!";
         $stockBadgeClass = 'bg-warning';
-    } elseif ($stock === null || $stock > 0) {
+    } elseif ($inStock && ($stock === null || $stock > 0)) {
         $stockStatus = 'In Stock';
         $stockBadgeClass = 'bg-success';
     } else {
@@ -55,7 +78,7 @@ function renderProductCard($product) {
                         <i class=\"fas fa-eye\"></i> Detail
                     </a>";
                     
-    if ($stock === null || $stock > 0) {
+    if ($inStock && ($stock === null || $stock > 0)) {
         echo "<a href=\"" . site_url("whatsapp/{$id}") . "\" class=\"btn btn-sm btn-success whatsapp-btn\" target=\"_blank\">
                         <i class=\"fab fa-whatsapp\"></i> Order
                     </a>";
@@ -77,11 +100,51 @@ function renderProductCard($product) {
  * @param array $relatedProduct The related product data
  */
 function renderRelatedProductCard($relatedProduct) {
-    // Extract product data with defaults
+    // Extract product data with defaults and normalize
     $id = $relatedProduct['id'] ?? 0;
     $name = $relatedProduct['name'] ?? 'Untitled Product';
     $price = $relatedProduct['price'] ?? 0;
-    $image = !empty($relatedProduct['image']) ? $relatedProduct['image'] : base_url('assets/img/product-default.jpg');
+    
+    // Handle image path - normalize it properly using the same logic as in Product model
+    $image = '';
+    if (!empty($relatedProduct['images'])) {
+        $images = json_decode($relatedProduct['images'], true);
+        if (is_array($images) && isset($images['image'])) {
+            $image = $images['image'];
+        }
+    } else if (!empty($relatedProduct['image'])) {
+        $image = $relatedProduct['image'];
+    }
+    
+    // Normalize the image path using the same logic as in Product model
+    if (empty($image)) {
+        $image = 'assets/img/product-default.jpg';
+    } else if (strpos($image, 'assets/') === 0) {
+        // If it's already a full path with assets/, return as is
+        $image = $image;
+    } else if (strpos($image, 'assets/') === false) {
+        // If it's a relative path, prepend assets/
+        $image = 'assets/' . ltrim($image, '/');
+    }
+    
+    // Handle stock data normalization for related products
+    $stock = $relatedProduct['stockQuantity'] ?? $relatedProduct['stock'] ?? null;
+    $inStock = $relatedProduct['inStock'] ?? $relatedProduct['in_stock'] ?? true;
+    
+    // Determine stock status for related products
+    $stockStatus = '';
+    $stockBadgeClass = '';
+    
+    if ($stock !== null && $stock <= 5 && $stock > 0) {
+        $stockStatus = "Only {$stock} left!";
+        $stockBadgeClass = 'bg-warning';
+    } elseif ($inStock && ($stock === null || $stock > 0)) {
+        $stockStatus = 'In Stock';
+        $stockBadgeClass = 'bg-success';
+    } else {
+        $stockStatus = 'Out of Stock';
+        $stockBadgeClass = 'bg-danger';
+    }
     
     // Render the component
     echo "
@@ -91,14 +154,28 @@ function renderRelatedProductCard($relatedProduct) {
         <div class=\"card-body d-flex flex-column\">
             <h6 class=\"card-title related-product-title\">" . htmlspecialchars($name) . "</h6>
             <div class=\"mt-auto\">
-                <div class=\"d-flex justify-content-between align-items-center\">
+                <div class=\"d-flex justify-content-between align-items-center mb-2\">
                     <span class=\"text-success fw-bold related-product-price\">
                         Rp " . number_format($price, 0, ',', '.') . "
                     </span>
+                    <span class=\"badge {$stockBadgeClass}\">{$stockStatus}</span>
                 </div>
-                <a href=\"" . site_url("product/{$id}") . "\" class=\"btn btn-sm btn-outline-primary mt-2 detail-btn\">
+                <div class=\"mt-2 d-flex justify-content-between\">";
+                    
+    if ($inStock && ($stock === null || $stock > 0)) {
+        echo "<a href=\"" . site_url("whatsapp/{$id}") . "\" class=\"btn btn-sm btn-success whatsapp-btn\" target=\"_blank\">
+                        <i class=\"fab fa-whatsapp\"></i> Order
+                    </a>";
+    } else {
+        echo "<button class=\"btn btn-sm btn-secondary\" disabled>
+                        <i class=\"fab fa-whatsapp\"></i> Out of Stock
+                    </button>";
+    }
+    
+    echo "<a href=\"" . site_url("product/{$id}") . "\" class=\"btn btn-sm btn-outline-primary detail-btn\">
                     <i class=\"fas fa-eye\"></i> Detail
                 </a>
+                </div>
             </div>
         </div>
     </div>";
@@ -145,7 +222,7 @@ function renderProductGrid($products, $title, $id) {
         echo "<div class=\"col-12\"><p class=\"text-center\">No products available.</p></div>";
     } else {
         foreach ($products as $product) {
-            echo "<div class=\"col-md-4 mb-4\">";
+            echo "<div class=\"col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4\">";
             renderProductCard($product);
             echo "</div>";
         }

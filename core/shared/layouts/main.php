@@ -10,6 +10,8 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
     <!-- Component CSS -->
     <?php echo link_css('components.css'); ?>
+    <!-- Additional CSS -->
+    <?php if (isset($additional_css)) echo $additional_css; ?>
 </head>
 <body>
     <!-- Header -->

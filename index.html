@@ -109,7 +109,7 @@
         function createProductCardWithBadge(product, badgeType) {
             // Use default image if no image is specified or if image is empty
             const productImage = product.image && product.image.trim() !== '' 
-                ? product.image 
+                ? product.image.startsWith('http') ? product.image : 'assets/' + product.image 
                 : 'assets/img/product-default.jpg';
                 
             // Determine stock status display
@@ -213,9 +213,9 @@
                     
                     // Filter limited stock products (stock <= 5)
                     const limitedProducts = allProducts.filter(product => 
-                        product.stock_quantity !== null && 
-                        product.stock_quantity <= 5 && 
-                        product.stock_quantity > 0
+                        product.stockQuantity !== null && 
+                        product.stockQuantity <= 5 && 
+                        product.stockQuantity > 0
                     ).slice(0, 4); // Limit to 4 products
                     
                     // Filter best seller products (you can define your own logic here)
@@ -255,9 +255,29 @@
 
         // Function to order via WhatsApp
         function orderViaWhatsApp(productId) {
-            // In a real implementation, you would fetch the product details
-            // and generate a proper WhatsApp message
-            alert('Order via WhatsApp for product ID: ' + productId);
+            // Fetch product details from the API
+            fetch(`api/v1/products?id=${productId}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && result.data) {
+                        const product = result.data;
+                        // Handle both data structures (JSON vs API)
+                        const whatsappNumber = product.whatsappNumber !== undefined ? product.whatsappNumber : product.whatsapp_number;
+                        const price = product.price;
+                        const name = product.name;
+                        
+                        // Generate WhatsApp message
+                        const message = encodeURIComponent(`Halo, saya ingin memesan ${name} dengan harga ${formatPrice(price)}. Apakah masih tersedia?`);
+                        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${message}`;
+                        window.open(whatsappUrl, '_blank');
+                    } else {
+                        alert('Product not found. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching product details:', error);
+                    alert('Error fetching product details. Please try again.');
+                });
         }
     </script>
 </body>

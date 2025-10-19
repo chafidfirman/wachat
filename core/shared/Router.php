@@ -62,6 +62,11 @@ class Router {
         $requestMethod = strtoupper($requestMethod);
         $requestPath = trim($requestPath, '/');
         
+        // Handle empty path (root)
+        if (empty($requestPath)) {
+            $requestPath = '';
+        }
+        
         foreach ($this->routes as $key => $route) {
             // Skip fallback route in this loop
             if ($key === 'fallback') {

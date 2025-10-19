@@ -1,5 +1,22 @@
 <div class="card h-100 product-card">
-    <img src="<?php echo !empty($product['images']) ? json_decode($product['images'], true)['image'] : base_url('assets/img/product-default.jpg'); ?>" 
+    <img src="<?php 
+        // Include image helper
+        require_once __DIR__ . '/../../helpers/image_helper.php';
+        
+        // Handle image path - normalize it properly using centralized function
+        $image = '';
+        if (!empty($product['images'])) {
+            $images = json_decode($product['images'], true);
+            if (is_array($images) && isset($images['image'])) {
+                $image = $images['image'];
+            }
+        } else if (!empty($product['image'])) {
+            $image = $product['image'];
+        }
+        
+        // Normalize the image path using centralized function
+        echo getImageUrl($image);
+    ?>" 
          class="card-img-top product-image" alt="<?php echo htmlspecialchars($product['name']); ?>">
     <div class="card-body d-flex flex-column">
         <h5 class="card-title product-title"><?php echo htmlspecialchars($product['name']); ?></h5>
@@ -12,10 +29,13 @@
                     Rp <?php echo number_format($product['price'], 0, ',', '.'); ?>
                 </span>
                 <?php 
-                $stock = $product['stock'] ?? 0;
+                // Handle stock data normalization
+                $stock = $product['stockQuantity'] ?? $product['stock'] ?? null;
+                $inStock = $product['inStock'] ?? $product['in_stock'] ?? true;
+                
                 if ($stock !== null && $stock <= 5 && $stock > 0): ?>
                     <span class="badge bg-warning">Only <?php echo $stock; ?> left!</span>
-                <?php elseif ($stock === null || $stock > 0): ?>
+                <?php elseif ($inStock && ($stock === null || $stock > 0)): ?>
                     <span class="badge bg-success">In Stock</span>
                 <?php else: ?>
                     <span class="badge bg-danger">Out of Stock</span>
@@ -25,7 +45,7 @@
                 <a href="<?= site_url('product/' . $product['id']) ?>" class="btn btn-sm btn-outline-primary detail-btn">
                     <i class="fas fa-eye"></i> Detail
                 </a>
-                <?php if (($product['stock'] ?? 0) === null || ($product['stock'] ?? 0) > 0): ?>
+                <?php if ($inStock && ($stock === null || $stock > 0)): ?>
                     <a href="<?= site_url('whatsapp/' . $product['id']) ?>" class="btn btn-sm btn-success whatsapp-btn" target="_blank">
                         <i class="fab fa-whatsapp"></i> Order
                     </a>

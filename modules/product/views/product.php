@@ -2,6 +2,7 @@
 $title = htmlspecialchars($product['name']) . ' - ChatCart Web';
 ob_start();
 require_once __DIR__ . '/../../../core/shared/helpers/components_helper.php';
+require_once __DIR__ . '/../../../core/shared/helpers/view_helpers.php';
 ?>
 <div class="container mt-4 product-detail-container">
     <!-- Breadcrumb Navigation -->
@@ -27,7 +28,7 @@ require_once __DIR__ . '/../../../core/shared/helpers/components_helper.php';
             
             <div class="mb-3 product-stock-status">
                 <?php if (($product['stockQuantity'] ?? 0) !== null && ($product['stockQuantity'] ?? 0) <= 5 && ($product['stockQuantity'] ?? 0) > 0): ?>
-                    <span class="badge bg-warning">SISA <?php echo $product['stockQuantity'] ?? 0; ?> PCS!</span>
+                    <span class="badge bg-warning">SISA <?php echo $product['stockQuantity']; ?> PCS!</span>
                 <?php elseif ($product['inStock'] === true): ?>
                     <span class="badge bg-success">In Stock</span>
                 <?php else: ?>
@@ -35,7 +36,7 @@ require_once __DIR__ . '/../../../core/shared/helpers/components_helper.php';
                 <?php endif; ?>
             </div>
             
-            <?php if ($product['inStock'] === true && (($product['stockQuantity'] ?? 0) === null || ($product['stockQuantity'] ?? 0) > 0)): ?>
+            <?php if ($product['inStock'] === true && ($product['stockQuantity'] === null || ($product['stockQuantity'] ?? 0) > 0)): ?>
                 <form action="<?= site_url('whatsapp/' . $product['id']) ?>" method="GET" class="product-order-form">
                     <!-- Quantity Selection -->
                     <div class="mb-3">
@@ -85,7 +86,7 @@ require_once __DIR__ . '/../../../core/shared/helpers/components_helper.php';
                     </div>
                 <?php else: ?>
                     <?php foreach ($relatedProducts as $related): ?>
-                        <div class="col-md-3 mb-4">
+                        <div class="col-xl-3 col-lg-4 col-md-6 col-sm-6 mb-4">
                             <?php renderRelatedProductCard($related); ?>
                         </div>
                     <?php endforeach; ?>

@@ -5,9 +5,9 @@ document.addEventListener('DOMContentLoaded', function() {
         return new bootstrap.Tooltip(tooltipTriggerEl);
     });
     
-    // Handle search form submission
-    const searchForm = document.querySelector('form[action="public/index.php?path=search"]');
-    if (searchForm) {
+    // Handle search form submission - Use a more generic selector
+    const searchForms = document.querySelectorAll('form[action*="search"]');
+    searchForms.forEach(function(searchForm) {
         searchForm.addEventListener('submit', function(e) {
             const searchInput = this.querySelector('input[name="q"]');
             if (searchInput && searchInput.value.trim() === '') {
@@ -15,19 +15,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 alert('Please enter a search term');
             }
         });
-    }
-    
-    // Alternative selector for search form using the site_url pattern
-    const searchFormAlt = document.querySelector('form[action="' + window.location.origin + '/public/index.php?path=search"]');
-    if (searchFormAlt && !searchForm) {
-        searchFormAlt.addEventListener('submit', function(e) {
-            const searchInput = this.querySelector('input[name="q"]');
-            if (searchInput && searchInput.value.trim() === '') {
-                e.preventDefault();
-                alert('Please enter a search term');
-            }
-        });
-    }
+    });
 });
 
 // Product detail page functionality

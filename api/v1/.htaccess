@@ -1,0 +1,10 @@
+RewriteEngine On
+
+# Route API requests to the appropriate controller
+RewriteCond %{REQUEST_FILENAME} !-f
+RewriteCond %{REQUEST_FILENAME} !-d
+RewriteRule ^products/?$ products/index.php [QSA,L]
+RewriteRule ^products/([0-9]+)/?$ products/index.php?id=$1 [QSA,L]
+
+# Default route
+RewriteRule ^(.*)$ index.php [QSA,L]

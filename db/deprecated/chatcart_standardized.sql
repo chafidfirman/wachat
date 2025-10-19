@@ -1,4 +1,4 @@
--- Simplified MySQL database schema for ChatCart Web
+-- Standardized MySQL database schema for ChatCart Web
 
 -- Create database
 CREATE DATABASE IF NOT EXISTS chatcart;
@@ -26,17 +26,18 @@ CREATE TABLE IF NOT EXISTS categories (
   UNIQUE KEY slug (slug)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
--- Create products table
+-- Create products table with standardized field names
 CREATE TABLE IF NOT EXISTS products (
   id int(11) NOT NULL AUTO_INCREMENT,
   name varchar(255) NOT NULL,
   slug varchar(255) NOT NULL,
   price decimal(10,2) NOT NULL,
-  stock int(11) DEFAULT NULL,
+  stock_quantity int(11) DEFAULT NULL,
   description text,
-  images text,
+  image varchar(255) DEFAULT NULL,
   category_id int(11) DEFAULT NULL,
   is_active tinyint(1) DEFAULT 1,
+  whatsappNumber varchar(20) DEFAULT NULL,
   created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   updated_at timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (id),
@@ -77,6 +78,20 @@ CREATE TABLE IF NOT EXISTS wa_clicks (
   PRIMARY KEY (id),
   KEY product_id (product_id),
   CONSTRAINT wa_clicks_ibfk_1 FOREIGN KEY (product_id) REFERENCES products (id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+-- Create log_activity table
+CREATE TABLE IF NOT EXISTS log_activity (
+  id int(11) NOT NULL AUTO_INCREMENT,
+  admin_id int(11) DEFAULT NULL,
+  action varchar(50) NOT NULL,
+  description text,
+  ip_address varchar(45) DEFAULT NULL,
+  user_agent text,
+  created_at timestamp NULL DEFAULT CURRENT_TIMESTAMP,
+  PRIMARY KEY (id),
+  KEY admin_id (admin_id),
+  CONSTRAINT log_activity_ibfk_1 FOREIGN KEY (admin_id) REFERENCES admins (id) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
 
 -- Insert default admin user

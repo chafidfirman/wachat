@@ -13,7 +13,7 @@ require_once __DIR__ . '/template_helper.php';
  * @return void
  */
 function renderProductCard($product) {
-    include __DIR__ . '/../views/components/product-card.php';
+    include __DIR__ . '/../components/product-card.php';
 }
 
 /**
@@ -23,7 +23,7 @@ function renderProductCard($product) {
  * @return void
  */
 function renderRelatedProductCard($relatedProduct) {
-    include __DIR__ . '/../views/components/related-product-card.php';
+    include __DIR__ . '/../components/related-product-card.php';
 }
 
 /**

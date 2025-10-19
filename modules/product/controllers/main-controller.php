@@ -4,14 +4,18 @@ require_once __DIR__ . '/../models/product.php';
 require_once __DIR__ . '/../../../modules/category/models/category.php';
 require_once __DIR__ . '/../../../core/shared/helpers/view_helpers.php';
 require_once __DIR__ . '/../../../core/shared/helpers/debug_helper.php';
+require_once __DIR__ . '/../../../core/shared/exceptions/ChatCartException.php';
+require_once __DIR__ . '/../../../modules/error/controllers/ErrorController.php';
 
 class MainController {
     private $productModel;
     private $categoryModel;
+    private $errorController;
     
     public function __construct($pdo) {
         $this->productModel = new Product($pdo);
         $this->categoryModel = new Category($pdo);
+        $this->errorController = new ErrorController();
     }
     
     // Display homepage
@@ -23,6 +27,9 @@ class MainController {
             
             // Include the view
             include __DIR__ . '/../views/index.php';
+        } catch (ChatCartException $e) {
+            logError("ChatCart Error loading homepage: " . $e->getMessage());
+            $this->errorController->showError($e->getUserMessage(), $e->getDebugInfo());
         } catch (Exception $e) {
             logError("Error loading homepage: " . $e->getMessage());
             // Display error page
@@ -37,7 +44,7 @@ class MainController {
             // Validate ID parameter
             if (empty($id) || !is_numeric($id) || $id <= 0) {
                 logNavigationError("Product Detail", "Invalid Product ID: " . $id);
-                include __DIR__ . '/../views/404.php';
+                $this->errorController->show404("Product not found.");
                 return;
             }
             
@@ -52,17 +59,9 @@ class MainController {
             ]);
             
             if (!$product) {
-                // Try to get product from JSON if database failed
-                $product = $this->productModel->getByIdFromJson($id);
-                
-                if (!$product) {
-                    // Log navigation error
-                    logNavigationError("Product Detail", "Product ID: " . $id . " (Not Found)");
-                    
-                    // Product not found, redirect to 404
-                    include __DIR__ . '/../views/404.php';
-                    return;
-                }
+                // Product not found, show 404
+                $this->errorController->show404("Product not found.");
+                return;
             }
             
             // For JSON-based implementation, we use the category name directly
@@ -70,6 +69,9 @@ class MainController {
             
             // Include the view
             include __DIR__ . '/../views/product.php';
+        } catch (ChatCartException $e) {
+            logError("ChatCart Error loading product detail: " . $e->getMessage());
+            $this->errorController->showError($e->getUserMessage(), $e->getDebugInfo());
         } catch (Exception $e) {
             logError("Error loading product detail: " . $e->getMessage());
             // Display error page
@@ -98,6 +100,9 @@ class MainController {
             
             // Include the view
             include __DIR__ . '/../views/search.php';
+        } catch (ChatCartException $e) {
+            logError("ChatCart Error during search: " . $e->getMessage());
+            $this->errorController->showError($e->getUserMessage(), $e->getDebugInfo());
         } catch (Exception $e) {
             logError("Error during search: " . $e->getMessage());
             // Display error page
@@ -134,8 +139,8 @@ class MainController {
                 }
                 $message .= " dengan harga " . formatPrice($product['price']);
                 
-                // Redirect to WhatsApp
-                $whatsappUrl = "https://wa.me/" . $product['whatsapp_number'] . "?text=" . urlencode($message);
+                // Redirect to WhatsApp - Fixed field name from whatsapp_number to whatsappNumber
+                $whatsappUrl = "https://wa.me/" . $product['whatsappNumber'] . "?text=" . urlencode($message);
                 header("Location: $whatsappUrl");
                 exit;
             } else {
@@ -146,6 +151,10 @@ class MainController {
                 header('Location: ' . site_url());
                 exit;
             }
+        } catch (ChatCartException $e) {
+            logError("ChatCart Error during WhatsApp redirect: " . $e->getMessage());
+            header('Location: ' . site_url());
+            exit;
         } catch (Exception $e) {
             logError("Error during WhatsApp redirect: " . $e->getMessage());
             // Redirect to homepage on error

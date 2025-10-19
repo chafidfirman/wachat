@@ -49,6 +49,9 @@ if (DISPLAY_ERRORS) {
 // Include debug helper
 require_once __DIR__ . '/core/shared/helpers/debug_helper.php';
 
+// Include URL helper
+require_once __DIR__ . '/core/shared/helpers/url_helper.php';
+
 // Initialize debug mode if enabled
 if (DEBUG_MODE && isset($_GET['debug']) && $_GET['debug'] === 'true') {
     enableDebugMode();
@@ -67,10 +70,31 @@ function base_url($path = '') {
             $baseUrl = BASE_URL;
         } else {
             // Auto-detect base URL
-            $protocol = isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? 'https' : 'http';
+            $protocol = 'http';
+            
+            // Check if HTTPS is forced or detected
+            if (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on') {
+                $protocol = 'https';
+            } elseif (isset($_SERVER['HTTP_X_FORWARDED_PROTO']) && $_SERVER['HTTP_X_FORWARDED_PROTO'] === 'https') {
+                // Handle load balancer scenarios
+                $protocol = 'https';
+            }
+            
             $host = $_SERVER['HTTP_HOST'] ?? 'localhost';
+            
+            // Handle proxy scenarios
+            if (isset($_SERVER['HTTP_X_FORWARDED_HOST'])) {
+                $host = $_SERVER['HTTP_X_FORWARDED_HOST'];
+            }
+            
             $scriptName = $_SERVER['SCRIPT_NAME'] ?? '';
             $basePath = rtrim(dirname($scriptName), '/');
+            
+            // Special handling for public directory
+            if (strpos($basePath, '/public') !== false) {
+                $basePath = substr($basePath, 0, strpos($basePath, '/public'));
+            }
+            
             $baseUrl = $protocol . '://' . $host . $basePath . '/';
         }
     }
@@ -81,6 +105,7 @@ function base_url($path = '') {
         $path = ltrim($path, '/');
         return rtrim($baseUrl, '/') . '/' . $path;
     }
+    
     return $baseUrl;
 }
 

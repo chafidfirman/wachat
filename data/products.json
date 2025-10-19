@@ -5,9 +5,10 @@
     "description": "Latest smartphone with advanced features and high-resolution camera.",
     "price": 5000000,
     "category": "Electronics",
-    "image": "assets/img/Produk1.jpg",
+    "image": "img/Produk1.jpg",
     "inStock": true,
-    "stock": 15
+    "stockQuantity": 15,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 2,
@@ -15,9 +16,10 @@
     "description": "Thin and lightweight laptop with powerful performance.",
     "price": 8500000,
     "category": "Electronics",
-    "image": "assets/img/laptop1.jpg",
+    "image": "img/laptop1.jpg",
     "inStock": true,
-    "stock": 8
+    "stockQuantity": 8,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 3,
@@ -25,9 +27,10 @@
     "description": "Premium wireless earbuds with noise cancellation.",
     "price": 1200000,
     "category": "Electronics",
-    "image": "assets/img/Produk2.jpg",
+    "image": "img/Produk2.jpg",
     "inStock": true,
-    "stock": 25
+    "stockQuantity": 25,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 4,
@@ -35,9 +38,10 @@
     "description": "Fitness tracker and smartwatch with heart rate monitor.",
     "price": 2500000,
     "category": "Electronics",
-    "image": "assets/img/Produk3.jpg",
+    "image": "img/Produk3.jpg",
     "inStock": true,
-    "stock": 12
+    "stockQuantity": 12,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 5,
@@ -45,9 +49,10 @@
     "description": "Portable bluetooth speaker with deep bass and long battery life.",
     "price": 850000,
     "category": "Electronics",
-    "image": "assets/img/produk4.webp",
+    "image": "img/produk4.webp",
     "inStock": true,
-    "stock": 20
+    "stockQuantity": 20,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 6,
@@ -55,9 +60,10 @@
     "description": "Next-generation gaming console with 4K graphics.",
     "price": 6000000,
     "category": "Gaming",
-    "image": "assets/img/produk5.webp",
+    "image": "img/produk5.webp",
     "inStock": true,
-    "stock": 5
+    "stockQuantity": 5,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 7,
@@ -65,9 +71,10 @@
     "description": "Professional digital camera with interchangeable lenses.",
     "price": 7500000,
     "category": "Photography",
-    "image": "assets/img/884b122d46783f107910dca06812c056.webp",
+    "image": "img/884b122d46783f107910dca06812c056.webp",
     "inStock": true,
-    "stock": 7
+    "stockQuantity": 7,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 8,
@@ -75,9 +82,10 @@
     "description": "High-performance tablet with stylus support.",
     "price": 4500000,
     "category": "Electronics",
-    "image": "assets/img/0d19199d38b7b0b15a052a539daa76ba.webp",
+    "image": "img/0d19199d38b7b0b15a052a539daa76ba.webp",
     "inStock": true,
-    "stock": 10
+    "stockQuantity": 10,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 9,
@@ -85,9 +93,10 @@
     "description": "Over-ear wireless headphones with premium sound quality.",
     "price": 1800000,
     "category": "Electronics",
-    "image": "assets/img/4e21d3f99b86fc28e8178f492619de6f.gif",
+    "image": "img/4e21d3f99b86fc28e8178f492619de6f.gif",
     "inStock": true,
-    "stock": 18
+    "stockQuantity": 18,
+    "whatsappNumber": "6281234567890"
   },
   {
     "id": 10,
@@ -95,8 +104,9 @@
     "description": "Central control for all your smart home devices.",
     "price": 1500000,
     "category": "Smart Home",
-    "image": "assets/img/logobenner.webp",
+    "image": "img/logobenner.webp",
     "inStock": true,
-    "stock": 15
+    "stockQuantity": 15,
+    "whatsappNumber": "6281234567890"
   }
 ]

@@ -93,12 +93,44 @@ function shutdownHandler() {
 }
 
 /**
- * Log error to file
+ * Log error to file with enhanced formatting
  */
-function logError($message) {
+function logError($message, $context = 'General') {
     $timestamp = date('Y-m-d H:i:s');
-    $logMessage = "[$timestamp] $message\n";
+    $logMessage = "[$timestamp] [ERROR] [$context] $message\n";
     file_put_contents(__DIR__ . '/../../logs/error.log', $logMessage, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Log warning to file
+ */
+function logWarning($message, $context = 'General') {
+    $timestamp = date('Y-m-d H:i:s');
+    $logMessage = "[$timestamp] [WARNING] [$context] $message\n";
+    file_put_contents(__DIR__ . '/../../logs/warning.log', $logMessage, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Log info to file
+ */
+function logInfo($message, $context = 'General') {
+    $timestamp = date('Y-m-d H:i:s');
+    $logMessage = "[$timestamp] [INFO] [$context] $message\n";
+    file_put_contents(__DIR__ . '/../../logs/info.log', $logMessage, FILE_APPEND | LOCK_EX);
+}
+
+/**
+ * Log debug information to file
+ */
+function logDebug($message, $context = 'General') {
+    // Only log debug messages in development environment
+    if (!defined('ENVIRONMENT') || ENVIRONMENT !== 'development') {
+        return;
+    }
+    
+    $timestamp = date('Y-m-d H:i:s');
+    $logMessage = "[$timestamp] [DEBUG] [$context] $message\n";
+    file_put_contents(__DIR__ . '/../../logs/debug.log', $logMessage, FILE_APPEND | LOCK_EX);
 }
 
 /**

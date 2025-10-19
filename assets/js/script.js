@@ -10,43 +10,51 @@ function formatPrice(price) {
     }).format(price);
 }
 
-// Function to generate WhatsApp message
-function generateWhatsAppMessage(product, quantity = 1) {
-    const totalPrice = product.price * quantity;
-    return encodeURIComponent(`Halo, saya ingin memesan ${product.name} sebanyak ${quantity} pcs dengan total harga ${formatPrice(totalPrice)}. Apakah masih tersedia?`);
-}
-
-// Function to create product card HTML
-function createProductCard(product) {
+// Unified function to generate product card HTML
+function createProductCard(product, badgeType = '') {
     // Use default image if no image is specified or if image is empty
     const productImage = product.image && product.image.trim() !== '' 
-        ? product.image 
-        : 'img/product-default.jpg';
+        ? product.image.startsWith('http') ? product.image : 'assets/' + product.image 
+        : 'assets/img/product-default.jpg';
         
+    // Handle both data structures (JSON vs API)
+    const inStock = product.inStock !== undefined ? product.inStock : product.in_stock;
+    const stockQuantity = product.stockQuantity !== undefined ? product.stockQuantity : product.stock;
+    
     // Determine stock status display
     let stockStatus = '';
     let stockClass = '';
-    if (!product.inStock) {
+    
+    if (!inStock) {
         stockStatus = 'Out of Stock';
         stockClass = 'out-of-stock';
-    } else if (product.stockQuantity !== undefined && product.stockQuantity !== null) {
-        if (product.stockQuantity <= 0) {
+    } else if (stockQuantity !== undefined && stockQuantity !== null) {
+        if (stockQuantity <= 0) {
             stockStatus = 'Out of Stock';
             stockClass = 'out-of-stock';
-        } else if (product.stockQuantity <= 5) {
-            stockStatus = `Only ${product.stockQuantity} left!`;
+        } else if (stockQuantity <= 5) {
+            stockStatus = `Only ${stockQuantity} left!`;
             stockClass = 'low-stock';
         } else {
-            stockStatus = `${product.stockQuantity} in stock`;
+            stockStatus = `${stockQuantity} in stock`;
         }
     } else {
         stockStatus = 'In Stock';
     }
         
+    // Determine badge text
+    let badgeText = '';
+    if (badgeType === 'limited') {
+        badgeText = stockQuantity <= 3 ? `SISA ${stockQuantity} PCS!` : 'LIMITED STOCK!';
+    } else if (badgeType === 'best-seller') {
+        badgeText = 'Best Seller';
+    }
+    
     return `
         <div class="product-card">
+            ${badgeText ? `<div class="product-badge ${badgeType}">${badgeText}</div>` : ''}
             <div class="product-image">
-                <img src="${productImage}" alt="${product.name}" onerror="this.src='img/product-default.jpg'">
+                <img src="${productImage}" alt="${product.name}" onerror="this.src='assets/img/product-default.jpg'">
             </div>
             <div class="product-info">
                 <h3>${product.name}</h3>
@@ -57,12 +65,12 @@ function createProductCard(product) {
                     </span>
                 </div>
                 <div class="product-actions">
-                    <a href="public/index.php?path=product/${product.id}" class="action-btn detail-btn">
+                    <a href="product/${product.id}" class="action-btn detail-btn">
                         <i class="fas fa-info-circle"></i> Detail
                     </a>
-                    <button class="action-btn whatsapp-btn ${!product.inStock || (product.stockQuantity !== null && product.stockQuantity <= 0) ? 'out-of-stock-btn' : ''}" 
+                    <button class="action-btn whatsapp-btn ${!inStock || (stockQuantity !== null && stockQuantity <= 0) ? 'out-of-stock-btn' : ''}" 
                             onclick="orderViaWhatsApp(${product.id})"
-                            ${!product.inStock || (product.stockQuantity !== null && product.stockQuantity <= 0) ? 'disabled' : ''}>
+                            ${!inStock || (stockQuantity !== null && stockQuantity <= 0) ? 'disabled' : ''}>
                         <i class="fab fa-whatsapp"></i> Chat & Beli
                     </button>
                 </div>
@@ -81,37 +89,40 @@ function showProductDetail(productId) {
             return;
         }
         
-        // Create modal HTML
-        const modal = document.createElement('div');
-        modal.className = 'modal';
-        modal.id = 'productModal';
-        
-        // Use default image if no image is specified or if image is empty
+        // Handle both data structures (JSON vs API)
+        const inStock = product.inStock !== undefined ? product.inStock : product.in_stock;
+        const stockQuantity = product.stockQuantity !== undefined ? product.stockQuantity : product.stock;
+        const whatsappNumber = product.whatsappNumber !== undefined ? product.whatsappNumber : product.whatsapp_number;
         const productImage = product.image && product.image.trim() !== '' 
-            ? product.image 
-            : 'img/product-default.jpg';
+            ? product.image.startsWith('http') ? product.image : 'assets/' + product.image 
+            : 'assets/img/product-default.jpg';
         
         // Determine stock status display for modal
         let stockStatus = '';
         let stockClass = '';
-        if (!product.inStock) {
+        if (!inStock) {
             stockStatus = 'Out of Stock';
             stockClass = 'out-of-stock';
-        } else if (product.stockQuantity !== undefined && product.stockQuantity !== null) {
-            if (product.stockQuantity <= 0) {
+        } else if (stockQuantity !== undefined && stockQuantity !== null) {
+            if (stockQuantity <= 0) {
                 stockStatus = 'Out of Stock';
                 stockClass = 'out-of-stock';
-            } else if (product.stockQuantity <= 5) {
-                stockStatus = `Only ${product.stockQuantity} left!`;
+            } else if (stockQuantity <= 5) {
+                stockStatus = `Only ${stockQuantity} left!`;
                 stockClass = 'low-stock';
             } else {
-                stockStatus = `${product.stockQuantity} in stock`;
+                stockStatus = `${stockQuantity} in stock`;
                 stockClass = 'in-stock';
             }
         } else {
             stockStatus = 'In Stock';
             stockClass = 'in-stock';
         }
+        
+        // Create modal HTML
+        const modal = document.createElement('div');
+        modal.className = 'modal';
+        modal.id = 'productModal';
         
         modal.innerHTML = `
             <div class="modal-content">
@@ -121,9 +132,8 @@ function showProductDetail(productId) {
                 </div>
                 <div class="modal-body">
                     <div class="modal-product-image">
-                        <img src="${productImage}" alt="${product.name}" onerror="this.src='img/product-default.jpg'">
+                        <img src="${productImage}" alt="${product.name}" onerror="this.src='assets/img/product-default.jpg'">
                     </div>
-                    <div class="modal-product-category">${product.category}</div>
                     <h2 class="modal-product-name">${product.name}</h2>
                     <div class="modal-product-price">${formatPrice(product.price)}</div>
                     <p class="modal-product-description">${product.description}</p>
@@ -131,7 +141,7 @@ function showProductDetail(productId) {
                         Stock Status: ${stockStatus}
                     </div>
                     <div class="modal-actions">
-                        <a href="https://wa.me/${product.whatsappNumber}?text=${generateWhatsAppMessage(product)}" 
+                        <a href="https://wa.me/${whatsappNumber}?text=${encodeURIComponent(generateWhatsAppMessage(product, 1))}" 
                            target="_blank" class="whatsapp-btn">
                             <i class="fab fa-whatsapp"></i> Pesan via WhatsApp
                         </a>
@@ -169,54 +179,91 @@ function showProductDetail(productId) {
 function orderViaWhatsApp(productId) {
     // Fetch products from API to get the latest data
     fetchProducts().then(fetchedProducts => {
-        const product = fetchedProducts.find(p => p.id === productId);
+        const product = fetchedProducts.find(p => p.id == productId);
         if (product) {
-            const message = generateWhatsAppMessage(product);
-            const whatsappUrl = `https://wa.me/${product.whatsappNumber}?text=${message}`;
+            // Handle both data structures (JSON vs API)
+            const whatsappNumber = product.whatsappNumber !== undefined ? product.whatsappNumber : product.whatsapp_number;
+            const message = generateWhatsAppMessage(product, 1);
+            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
             window.open(whatsappUrl, '_blank');
+        } else {
+            // If product not found in the fetched list, try to get it directly from the API
+            fetch(`api/v1/products/${productId}`)
+                .then(response => response.json())
+                .then(result => {
+                    if (result.success && result.data) {
+                        const product = result.data;
+                        const whatsappNumber = product.whatsappNumber !== undefined ? product.whatsappNumber : product.whatsapp_number;
+                        const message = generateWhatsAppMessage(product, 1);
+                        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
+                        window.open(whatsappUrl, '_blank');
+                    } else {
+                        alert('Product not found. Please try again.');
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching product details:', error);
+                    alert('Error fetching product details. Please try again.');
+                });
         }
     }).catch(error => {
         console.error('Error fetching product details:', error);
+        alert('Error fetching product details. Please try again.');
     });
+}
+
+// Function to generate WhatsApp message
+function generateWhatsAppMessage(product, quantity = 1) {
+    const totalPrice = product.price * quantity;
+    return `Halo, saya ingin memesan ${product.name} sebanyak ${quantity} pcs dengan total harga ${formatPrice(totalPrice)}. Apakah masih tersedia?`;
 }
 
 // Function to render products
 function renderProducts(productsToShow) {
     const productGrid = document.getElementById('productGrid');
-    if (productsToShow.length === 0) {
-        productGrid.innerHTML = '<p>No products found.</p>';
-        return;
+    if (productGrid) {
+        if (productsToShow.length === 0) {
+            productGrid.innerHTML = '<p>No products found.</p>';
+            return;
+        }
+        
+        productGrid.innerHTML = productsToShow.map(product => createProductCard(product)).join('');
     }
-    
-    productGrid.innerHTML = productsToShow.map(product => createProductCard(product)).join('');
 }
 
 // Function to populate category filter
 function populateCategoryFilter() {
     const categoryFilter = document.getElementById('categoryFilter');
-    // Clear existing options
-    categoryFilter.innerHTML = '';
-    
-    // Add "all" option
-    const allOption = document.createElement('option');
-    allOption.value = 'all';
-    allOption.textContent = 'All Categories';
-    categoryFilter.appendChild(allOption);
-    
-    // Add unique categories
-    const uniqueCategories = [...new Set(products.map(product => product.category))];
-    uniqueCategories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        categoryFilter.appendChild(option);
-    });
+    if (categoryFilter) {
+        // Clear existing options
+        categoryFilter.innerHTML = '';
+        
+        // Add "all" option
+        const allOption = document.createElement('option');
+        allOption.value = 'all';
+        allOption.textContent = 'All Categories';
+        categoryFilter.appendChild(allOption);
+        
+        // Add unique categories
+        const uniqueCategories = [...new Set(products.map(product => product.category))];
+        uniqueCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+    }
 }
 
 // Function to filter products
 function filterProducts() {
-    const searchTerm = document.getElementById('searchInput').value.toLowerCase();
-    const selectedCategory = document.getElementById('categoryFilter').value;
+    const searchInput = document.getElementById('searchInput');
+    const categoryFilter = document.getElementById('categoryFilter');
+    
+    if (!searchInput || !categoryFilter) return;
+    
+    const searchTerm = searchInput.value.toLowerCase();
+    const selectedCategory = categoryFilter.value;
     
     let filteredProducts = products;
     
@@ -241,12 +288,13 @@ function filterProducts() {
 // Function to fetch products from API
 async function fetchProducts() {
     try {
-        const response = await fetch('api/products.php');
+        const response = await fetch('api/v1/products');
         if (!response.ok) {
             throw new Error(`HTTP error! status: ${response.status}`);
         }
-        const data = await response.json();
-        return Array.isArray(data) ? data : [];
+        const result = await response.json();
+        // Return the data array from the response
+        return Array.isArray(result) ? result : (result.data || []);
     } catch (error) {
         console.error('Error fetching products:', error);
         return [];
@@ -266,9 +314,9 @@ async function loadProducts() {
     populateCategoryFilter();
 }
 
-// Function to toggle mobile menu
+// Function to toggle mobile menu (only for old navigation structure)
 function toggleMobileMenu() {
-    // Handle old navigation structure
+    // Handle old navigation structure only
     const oldMenuToggle = document.querySelector('.menu-toggle');
     const oldNavMenu = document.querySelector('nav ul');
     
@@ -277,74 +325,94 @@ function toggleMobileMenu() {
         oldNavMenu.classList.toggle('active');
     }
     
-    // Handle new Bootstrap navigation structure
-    const newNavbarToggle = document.querySelector('.navbar-toggler');
-    const newNavbarCollapse = document.querySelector('.navbar-collapse');
-    
-    if (newNavbarToggle && newNavbarCollapse) {
-        // Toggle the 'show' class on the collapse element
-        newNavbarCollapse.classList.toggle('show');
-    }
+    // Note: For new Bootstrap navigation, we rely on Bootstrap's built-in collapse functionality
+    // which is triggered by data-bs-toggle="collapse" and data-bs-target attributes
 }
 
 // Initialize the page
 document.addEventListener('DOMContentLoaded', function() {
-    loadProducts();
-    
-    // Add event listeners
-    const searchBtn = document.getElementById('searchBtn');
-    if (searchBtn) {
-        searchBtn.addEventListener('click', filterProducts);
-    }
-    
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keyup', function(event) {
-            if (event.key === 'Enter') {
-                filterProducts();
-            }
-        });
-    }
-    
-    const categoryFilter = document.getElementById('categoryFilter');
-    if (categoryFilter) {
-        categoryFilter.addEventListener('change', filterProducts);
-    }
-    
-    // Add mobile menu toggle functionality for old navigation
-    const oldMenuToggle = document.querySelector('.menu-toggle');
-    if (oldMenuToggle) {
-        oldMenuToggle.addEventListener('click', toggleMobileMenu);
-    }
-    
-    // Add mobile menu toggle functionality for new Bootstrap navigation
-    const newNavbarToggle = document.querySelector('.navbar-toggler');
-    if (newNavbarToggle) {
-        newNavbarToggle.addEventListener('click', toggleMobileMenu);
-    }
-    
-    // Close mobile menu when clicking on a nav link (old navigation)
-    const oldNavLinks = document.querySelectorAll('nav ul li a');
-    oldNavLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            const menuToggle = document.querySelector('.menu-toggle');
-            const navMenu = document.querySelector('nav ul');
+    try {
+        // Only load products on pages that have the product grid
+        const productGrid = document.getElementById('productGrid');
+        if (productGrid) {
+            loadProducts().catch(error => {
+                console.error('Error loading products:', error);
+            });
             
-            if (menuToggle && navMenu) {
-                menuToggle.classList.remove('active');
-                navMenu.classList.remove('active');
+            // Add event listeners
+            const searchBtn = document.getElementById('searchBtn');
+            if (searchBtn) {
+                searchBtn.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    filterProducts();
+                });
             }
-        });
-    });
-    
-    // Close mobile menu when clicking on a nav link (new Bootstrap navigation)
-    const newNavLinks = document.querySelectorAll('.navbar-nav .nav-link');
-    newNavLinks.forEach(link => {
-        link.addEventListener('click', function() {
-            const navbarCollapse = document.querySelector('.navbar-collapse');
-            if (navbarCollapse) {
-                navbarCollapse.classList.remove('show');
+            
+            const searchInput = document.getElementById('searchInput');
+            if (searchInput) {
+                searchInput.addEventListener('keyup', function(event) {
+                    if (event.key === 'Enter') {
+                        filterProducts();
+                    }
+                });
             }
-        });
-    });
+            
+            const categoryFilter = document.getElementById('categoryFilter');
+            if (categoryFilter) {
+                categoryFilter.addEventListener('change', filterProducts);
+            }
+        }
+        
+        // Add mobile menu toggle functionality for old navigation only
+        const oldMenuToggle = document.querySelector('.menu-toggle');
+        if (oldMenuToggle) {
+            oldMenuToggle.addEventListener('click', toggleMobileMenu);
+        }
+        
+        // Note: For new Bootstrap navigation, we don't need to add event listeners
+        // because Bootstrap's collapse functionality is triggered automatically
+        // by the data-bs-toggle="collapse" and data-bs-target attributes
+        
+        // Close mobile menu when clicking on a nav link (old navigation)
+        const oldNavLinks = document.querySelectorAll('nav ul li a');
+        if (oldNavLinks.length > 0) {
+            oldNavLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    const menuToggle = document.querySelector('.menu-toggle');
+                    const navMenu = document.querySelector('nav ul');
+                    
+                    if (menuToggle && navMenu) {
+                        menuToggle.classList.remove('active');
+                        navMenu.classList.remove('active');
+                    }
+                });
+            });
+        }
+        
+        // Close mobile menu when clicking on a nav link (new Bootstrap navigation)
+        // Note: Bootstrap's collapse functionality handles this automatically
+        // but we can add additional handling if needed
+        const newNavLinks = document.querySelectorAll('.navbar-nav .nav-link');
+        if (newNavLinks.length > 0) {
+            newNavLinks.forEach(link => {
+                link.addEventListener('click', function() {
+                    // For Bootstrap navigation, the collapse is handled automatically
+                    // but we can ensure the navbar is closed on smaller screens
+                    const navbarCollapse = document.querySelector('.navbar-collapse');
+                    if (navbarCollapse && navbarCollapse.classList.contains('show')) {
+                        // Remove the 'show' class to close the navbar
+                        navbarCollapse.classList.remove('show');
+                        
+                        // Also update the aria-expanded attribute on the toggle button
+                        const navbarToggle = document.querySelector('.navbar-toggler');
+                        if (navbarToggle) {
+                            navbarToggle.setAttribute('aria-expanded', 'false');
+                        }
+                    }
+                });
+            });
+        }
+    } catch (error) {
+        console.error('Error initializing page:', error);
+    }
 });

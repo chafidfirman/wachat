@@ -11,3 +11,4 @@
 [2025-10-12 18:21:15] NAVIGATION ERROR: Menu 'Product Detail' -> Destination 'Product ID: 4 (Not Found)' (404 Not Found)
 [2025-10-12 18:37:52] NAVIGATION ERROR: Menu 'Product Detail' -> Destination 'Product ID: 6 (Not Found)' (404 Not Found)
 [2025-10-13 13:25:55] NAVIGATION ERROR: Menu 'Product Detail' -> Destination 'Product ID: 6 (Not Found)' (404 Not Found)
+[2025-10-17 17:09:14] NAVIGATION ERROR: Menu 'Test Menu' -> Destination '/test-page.html' (404 Not Found)

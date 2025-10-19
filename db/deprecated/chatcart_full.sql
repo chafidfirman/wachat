@@ -106,6 +106,7 @@ CREATE TABLE `products` (
   `images` json DEFAULT NULL,
   `category_id` int DEFAULT NULL,
   `is_active` tinyint(1) DEFAULT '1',
+  `whatsappNumber` varchar(20) DEFAULT NULL,
   `created_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP,
   `updated_at` timestamp NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
   PRIMARY KEY (`id`),
@@ -159,7 +160,7 @@ CREATE TABLE `log_activity` (
 
 LOCK TABLES `admins` WRITE;
 /*!40000 ALTER TABLE `admins` DISABLE KEYS */;
-INSERT INTO `admins` VALUES (1,'admin','$2y$10$92IXUNpkjO0rOQ5byMi.Ye4oKoEa3Ro9llC/.og/at2.uheWG/igi','Admin User','6281234567890','2025-10-11 22:00:00');
+INSERT INTO `admins` VALUES (1,'admin','$2y$10$hkdwDHAxchrG1WeFw/pZgesHsmQ78lqvsAhGS3/HjHFDeoV/vUwFy','Admin User','6281234567890','2025-10-11 22:00:00');
 /*!40000 ALTER TABLE `admins` ENABLE KEYS */;
 UNLOCK TABLES;
 

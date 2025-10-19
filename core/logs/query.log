@@ -129,3 +129,12 @@
 [2025-10-13 13:30:48] QUERY EXECUTED: API Request Method: GET | Params: No parameters
 [2025-10-13 13:30:48] QUERY EXECUTED: Reading products from JSON file: C:\xampp\htdocs\wachat\data\products.json | Params: No parameters
 [2025-10-13 13:30:48] QUERY EXECUTED: Returning 5 products | Params: No parameters
+[2025-10-17 15:17:11] QUERY EXECUTED: Loading product detail | Params: {"id":"4"}
+[2025-10-17 15:17:11] QUERY EXECUTED: Product lookup result | Params: {"requested_id":"4","requested_id_type":"string","product_found":"no"}
+[2025-10-17 17:09:14] QUERY EXECUTED: SELECT * FROM products WHERE id = ? | Params: [123]
+[2025-10-17 17:22:24] QUERY EXECUTED: SELECT * FROM products WHERE id = ? | Params: [1]
+[2025-10-17 17:28:48] QUERY EXECUTED: Loading product detail | Params: {"id":"6"}
+[2025-10-17 17:28:48] QUERY EXECUTED: Product lookup result | Params: {"requested_id":"6","requested_id_type":"string","product_found":"yes"}
+[2025-10-17 18:28:08] QUERY EXECUTED: Loading product detail | Params: {"id":"2"}
+[2025-10-17 18:28:08] QUERY EXECUTED: Product lookup result | Params: {"requested_id":"2","requested_id_type":"string","product_found":"yes"}
+[2025-10-17 18:36:18] QUERY EXECUTED: Loading product detail | Params: {"id":"3"}

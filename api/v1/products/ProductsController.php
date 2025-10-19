@@ -9,6 +9,12 @@ require_once __DIR__ . '/../../../core/shared/config/database.php';
 require_once __DIR__ . '/../../../core/shared/Database.php';
 require_once __DIR__ . '/../../../modules/product/models/Product.php';
 require_once __DIR__ . '/../../../modules/user/models/LogActivity.php';
+require_once __DIR__ . '/../../../core/shared/exceptions/ChatCartException.php';
+
+// Define default values
+if (!defined('DEFAULT_WHATSAPP_NUMBER')) {
+    define('DEFAULT_WHATSAPP_NUMBER', '+6281234567890');
+}
 
 class ProductsController extends ApiController {
     private $productModel;
@@ -31,17 +37,25 @@ class ProductsController extends ApiController {
      * Process the API request
      */
     public function processRequest() {
-        switch ($this->method) {
-            case 'GET':
-                return $this->handleGet();
-            case 'POST':
-                return $this->handlePost();
-            case 'PUT':
-                return $this->handlePut();
-            case 'DELETE':
-                return $this->handleDelete();
-            default:
-                sendMethodNotAllowedResponse(['GET', 'POST', 'PUT', 'DELETE']);
+        try {
+            switch ($this->method) {
+                case 'GET':
+                    return $this->handleGet();
+                case 'POST':
+                    return $this->handlePost();
+                case 'PUT':
+                    return $this->handlePut();
+                case 'DELETE':
+                    return $this->handleDelete();
+                default:
+                    sendMethodNotAllowedResponse(['GET', 'POST', 'PUT', 'DELETE']);
+            }
+        } catch (ChatCartException $e) {
+            error_log("ChatCart API Error: " . $e->getMessage());
+            sendErrorResponse($e->getMessage(), $e->getCode(), $e->getAdditionalData(), $e->getContext());
+        } catch (Exception $e) {
+            error_log("API Error in ProductsController: " . $e->getMessage());
+            sendErrorResponse('Internal server error occurred', 500);
         }
     }
     
@@ -65,32 +79,58 @@ class ProductsController extends ApiController {
                 sendErrorResponse('Product not found', 404);
             }
         } else {
-            // Get all products with optional pagination
+            // Get all products with optional pagination and filters
             $page = (int)$this->getParam('page', 1);
             $limit = (int)$this->getParam('limit', 10);
             $search = $this->sanitizeInput($this->getParam('search'));
-            $category = $this->sanitizeInput($this->getParam('category'));
+            $category = $this->getParam('category');
+            $minPrice = $this->getParam('min_price');
+            $maxPrice = $this->getParam('max_price');
+            $inStock = $this->getParam('in_stock');
+            $sort = $this->getParam('sort', 'id');
+            $order = $this->getParam('order', 'asc');
             
             // Ensure page and limit are valid
             $page = max(1, $page);
             $limit = max(1, min(100, $limit)); // Limit between 1 and 100
             
-            // Get products with filters
-            if ($search) {
-                // Further sanitize search term
-                $search = preg_replace('/[^a-zA-Z0-9\s\-_]/', '', $search);
-                $products = $this->productModel->search($search);
-                sendSuccessResponse($products, 'Products retrieved successfully');
-            } elseif ($category) {
-                // Validate category parameter
-                if (!is_numeric($category) && !is_string($category)) {
-                    sendErrorResponse('Invalid category parameter', 400);
+            // Prepare filters
+            $filters = [];
+            if ($category) {
+                // Validate category parameter - should be numeric for ID lookup
+                if (!is_numeric($category)) {
+                    sendErrorResponse('Category parameter must be numeric', 400);
                 }
-                $products = $this->productModel->getByCategory($category);
-                sendSuccessResponse($products, 'Products retrieved successfully');
-            } else {
-                $products = $this->productModel->getAll();
-                sendSuccessResponse($products, 'Products retrieved successfully');
+                $filters['category_id'] = (int)$category;
+            }
+            if ($minPrice !== null && is_numeric($minPrice)) {
+                $filters['min_price'] = (float)$minPrice;
+            }
+            if ($maxPrice !== null && is_numeric($maxPrice)) {
+                $filters['max_price'] = (float)$maxPrice;
+            }
+            if ($inStock !== null) {
+                $filters['in_stock'] = (int)$inStock;
+            }
+            $filters['sort'] = $sort;
+            $filters['order'] = $order;
+            
+            // Get products with filters
+            try {
+                if ($search || !empty($filters)) {
+                    // Use enhanced search method
+                    $products = $this->productModel->search($search, $filters);
+                    sendSuccessResponse($products, 'Products retrieved successfully');
+                } else {
+                    $products = $this->productModel->getAll();
+                    sendSuccessResponse($products, 'Products retrieved successfully');
+                }
+            } catch (ChatCartException $e) {
+                error_log("ChatCart Error in handleGet: " . $e->getMessage());
+                sendErrorResponse($e->getMessage(), $e->getCode(), $e->getAdditionalData(), $e->getContext());
+            } catch (Exception $e) {
+                error_log("Database error in handleGet: " . $e->getMessage());
+                sendErrorResponse('Failed to retrieve products', 500);
             }
         }
     }
@@ -102,7 +142,7 @@ class ProductsController extends ApiController {
         // In a real implementation, you would authenticate the user first
         
         // Validate required fields
-        $requiredFields = ['name', 'price', 'description'];
+        $requiredFields = ['name', 'price'];
         $missingFields = $this->validateRequiredFields($requiredFields);
         
         if ($missingFields) {
@@ -111,22 +151,57 @@ class ProductsController extends ApiController {
         
         // Sanitize input data with enhanced security
         $name = $this->sanitizeProductName($this->getParam('name'));
-        $price = $this->sanitizePrice($this->getParam('price'));
-        $description = $this->sanitizeDescription($this->getParam('description'));
-        $categoryId = $this->sanitizeCategoryId($this->getParam('category_id', 0));
-        $inStock = (bool)$this->getParam('in_stock', true);
-        $stockQuantity = $this->getParam('stock_quantity') !== null ? $this->sanitizeStockQuantity($this->getParam('stock_quantity')) : null;
-        $image = $this->sanitizeImageUrl($this->getParam('image'));
-        $whatsappNumber = $this->sanitizeWhatsappNumber($this->getParam('whatsapp_number', DEFAULT_WHATSAPP_NUMBER));
+        $price = $this->getParam('price');
+        $description = $this->sanitizeDescription($this->getParam('description', ''));
+        $categoryId = $this->getParam('categoryId', 0);
+        $inStock = (bool)$this->getParam('inStock', true);
+        $stockQuantity = $this->getParam('stockQuantity');
+        $image = $this->sanitizeImageUrl($this->getParam('image', ''));
+        $whatsappNumber = $this->getParam('whatsappNumber', DEFAULT_WHATSAPP_NUMBER);
+        
+        // Validate and sanitize price
+        $price = $this->sanitizePrice($price);
+        if ($price === false) {
+            sendValidationErrorResponse(['price' => 'Invalid price format']);
+        }
         
         // Validate price is positive
         if ($price <= 0) {
             sendValidationErrorResponse(['price' => 'Price must be greater than zero']);
         }
         
-        // Validate stock quantity if provided
-        if ($stockQuantity !== null && $stockQuantity < 0) {
-            sendValidationErrorResponse(['stock_quantity' => 'Stock quantity cannot be negative']);
+        // Validate and sanitize category ID
+        $categoryId = $this->sanitizeCategoryId($categoryId);
+        if ($categoryId === false) {
+            $categoryId = 0; // Default to uncategorized
+        }
+        
+        // Validate and sanitize stock quantity if provided
+        if ($stockQuantity !== null) {
+            $stockQuantity = $this->sanitizeStockQuantity($stockQuantity);
+            if ($stockQuantity === false) {
+                sendValidationErrorResponse(['stockQuantity' => 'Invalid stock quantity format']);
+            }
+            // Validate stock quantity is non-negative
+            if ($stockQuantity < 0) {
+                sendValidationErrorResponse(['stockQuantity' => 'Stock quantity cannot be negative']);
+            }
+        }
+        
+        // Sanitize other fields
+        $name = $this->sanitizeProductName($name);
+        $description = $this->sanitizeDescription($description);
+        $image = $this->sanitizeImageUrl($image);
+        $whatsappNumber = $this->sanitizeWhatsappNumber($whatsappNumber);
+        
+        // Additional validation for product name
+        if (empty($name)) {
+            sendValidationErrorResponse(['name' => 'Product name cannot be empty']);
+        }
+        
+        // Additional validation for WhatsApp number
+        if (empty($whatsappNumber)) {
+            sendValidationErrorResponse(['whatsappNumber' => 'WhatsApp number is required']);
         }
         
         // Create product data array
@@ -134,11 +209,11 @@ class ProductsController extends ApiController {
             'name' => $name,
             'price' => $price,
             'description' => $description,
-            'category_id' => $categoryId,
-            'in_stock' => $inStock,
-            'stock_quantity' => $stockQuantity,
+            'categoryId' => $categoryId,
+            'inStock' => $inStock,
+            'stockQuantity' => $stockQuantity,
             'image' => $image,
-            'whatsapp_number' => $whatsappNumber
+            'whatsappNumber' => $whatsappNumber
         ];
         
         // Try to create the product
@@ -157,7 +232,11 @@ class ProductsController extends ApiController {
             } else {
                 sendErrorResponse('Failed to create product', 500);
             }
+        } catch (ChatCartException $e) {
+            error_log("ChatCart Error in handlePost: " . $e->getMessage());
+            sendErrorResponse($e->getMessage(), $e->getCode(), $e->getAdditionalData(), $e->getContext());
         } catch (Exception $e) {
+            error_log("Database error in handlePost: " . $e->getMessage());
             sendErrorResponse('Failed to create product: ' . $e->getMessage(), 500);
         }
     }
@@ -185,31 +264,75 @@ class ProductsController extends ApiController {
         }
         
         // Validate required fields
-        $requiredFields = ['name', 'price', 'description'];
+        $requiredFields = ['name', 'price'];
         $missingFields = $this->validateRequiredFields($requiredFields);
         
         if ($missingFields) {
             sendValidationErrorResponse($missingFields);
         }
         
-        // Sanitize input data with enhanced security
-        $name = $this->sanitizeProductName($this->getParam('name'));
-        $price = $this->sanitizePrice($this->getParam('price'));
-        $description = $this->sanitizeDescription($this->getParam('description'));
-        $categoryId = $this->sanitizeCategoryId($this->getParam('category_id', $existingProduct['category_id']));
-        $inStock = $this->getParam('in_stock') !== null ? (bool)$this->getParam('in_stock') : $existingProduct['in_stock'];
-        $stockQuantity = $this->getParam('stock_quantity') !== null ? $this->sanitizeStockQuantity($this->getParam('stock_quantity')) : $existingProduct['stock_quantity'];
-        $image = $this->sanitizeImageUrl($this->getParam('image', $existingProduct['image']));
-        $whatsappNumber = $this->sanitizeWhatsappNumber($this->getParam('whatsapp_number', $existingProduct['whatsapp_number']));
+        // Get parameters
+        $name = $this->getParam('name');
+        $price = $this->getParam('price');
+        $description = $this->getParam('description', $existingProduct['description']);
+        $categoryId = $this->getParam('categoryId', $existingProduct['category_id']);
+        $inStock = $this->getParam('inStock');
+        $stockQuantity = $this->getParam('stockQuantity');
+        $image = $this->getParam('image', $existingProduct['image']);
+        $whatsappNumber = $this->getParam('whatsappNumber', $existingProduct['whatsappNumber']);
+        
+        // Validate and sanitize price
+        $price = $this->sanitizePrice($price);
+        if ($price === false) {
+            sendValidationErrorResponse(['price' => 'Invalid price format']);
+        }
         
         // Validate price is positive
         if ($price <= 0) {
             sendValidationErrorResponse(['price' => 'Price must be greater than zero']);
         }
         
-        // Validate stock quantity if provided
-        if ($stockQuantity !== null && $stockQuantity < 0) {
-            sendValidationErrorResponse(['stock_quantity' => 'Stock quantity cannot be negative']);
+        // Validate and sanitize category ID
+        $categoryId = $this->sanitizeCategoryId($categoryId);
+        if ($categoryId === false) {
+            $categoryId = $existingProduct['category_id'];
+        }
+        
+        // Validate and sanitize stock quantity if provided
+        if ($stockQuantity !== null) {
+            $stockQuantity = $this->sanitizeStockQuantity($stockQuantity);
+            if ($stockQuantity === false) {
+                sendValidationErrorResponse(['stockQuantity' => 'Invalid stock quantity format']);
+            }
+            // Validate stock quantity is non-negative
+            if ($stockQuantity < 0) {
+                sendValidationErrorResponse(['stockQuantity' => 'Stock quantity cannot be negative']);
+            }
+        } else {
+            $stockQuantity = $existingProduct['stock_quantity'];
+        }
+        
+        // Handle inStock parameter
+        if ($inStock !== null) {
+            $inStock = (bool)$inStock;
+        } else {
+            $inStock = $existingProduct['in_stock'];
+        }
+        
+        // Sanitize other fields
+        $name = $this->sanitizeProductName($name);
+        $description = $this->sanitizeDescription($description);
+        $image = $this->sanitizeImageUrl($image);
+        $whatsappNumber = $this->sanitizeWhatsappNumber($whatsappNumber);
+        
+        // Additional validation for product name
+        if (empty($name)) {
+            sendValidationErrorResponse(['name' => 'Product name cannot be empty']);
+        }
+        
+        // Additional validation for WhatsApp number
+        if (empty($whatsappNumber)) {
+            sendValidationErrorResponse(['whatsappNumber' => 'WhatsApp number is required']);
         }
         
         // Create product data array
@@ -218,11 +341,11 @@ class ProductsController extends ApiController {
             'name' => $name,
             'price' => $price,
             'description' => $description,
-            'category_id' => $categoryId,
-            'in_stock' => $inStock,
-            'stock_quantity' => $stockQuantity,
+            'categoryId' => $categoryId,
+            'inStock' => $inStock,
+            'stockQuantity' => $stockQuantity,
             'image' => $image,
-            'whatsapp_number' => $whatsappNumber
+            'whatsappNumber' => $whatsappNumber
         ];
         
         // Try to update the product
@@ -241,7 +364,11 @@ class ProductsController extends ApiController {
             } else {
                 sendErrorResponse('Failed to update product', 500);
             }
+        } catch (ChatCartException $e) {
+            error_log("ChatCart Error in handlePut: " . $e->getMessage());
+            sendErrorResponse($e->getMessage(), $e->getCode(), $e->getAdditionalData(), $e->getContext());
         } catch (Exception $e) {
+            error_log("Database error in handlePut: " . $e->getMessage());
             sendErrorResponse('Failed to update product: ' . $e->getMessage(), 500);
         }
     }
@@ -284,7 +411,11 @@ class ProductsController extends ApiController {
             } else {
                 sendErrorResponse('Failed to delete product', 500);
             }
+        } catch (ChatCartException $e) {
+            error_log("ChatCart Error in handleDelete: " . $e->getMessage());
+            sendErrorResponse($e->getMessage(), $e->getCode(), $e->getAdditionalData(), $e->getContext());
         } catch (Exception $e) {
+            error_log("Database error in handleDelete: " . $e->getMessage());
             sendErrorResponse('Failed to delete product: ' . $e->getMessage(), 500);
         }
     }
@@ -298,18 +429,18 @@ class ProductsController extends ApiController {
         $name = $this->sanitizeInput($name);
         // Limit product name length
         $name = substr($name, 0, 255);
-        return $name;
+        return trim($name);
     }
     
     /**
      * Sanitize price
      * @param mixed $price Price value
-     * @return float Sanitized price
+     * @return float|false Sanitized price or false if invalid
      */
     private function sanitizePrice($price) {
         $price = filter_var($price, FILTER_VALIDATE_FLOAT);
         if ($price === false) {
-            sendValidationErrorResponse(['price' => 'Invalid price format']);
+            return false;
         }
         return round($price, 2); // Round to 2 decimal places
     }
@@ -323,18 +454,18 @@ class ProductsController extends ApiController {
         $description = $this->sanitizeInput($description);
         // Limit description length
         $description = substr($description, 0, 1000);
-        return $description;
+        return trim($description);
     }
     
     /**
      * Sanitize category ID
      * @param mixed $categoryId Category ID
-     * @return int Sanitized category ID
+     * @return int|false Sanitized category ID or false if invalid
      */
     private function sanitizeCategoryId($categoryId) {
         $categoryId = filter_var($categoryId, FILTER_VALIDATE_INT);
         if ($categoryId === false) {
-            return 0; // Default to uncategorized
+            return false;
         }
         return max(0, $categoryId); // Ensure non-negative
     }
@@ -342,12 +473,16 @@ class ProductsController extends ApiController {
     /**
      * Sanitize stock quantity
      * @param mixed $stockQuantity Stock quantity
-     * @return int Sanitized stock quantity
+     * @return int|false Sanitized stock quantity or false if invalid
      */
     private function sanitizeStockQuantity($stockQuantity) {
+        if ($stockQuantity === null) {
+            return null;
+        }
+        
         $stockQuantity = filter_var($stockQuantity, FILTER_VALIDATE_INT);
         if ($stockQuantity === false) {
-            sendValidationErrorResponse(['stock_quantity' => 'Invalid stock quantity format']);
+            return false;
         }
         return max(0, $stockQuantity); // Ensure non-negative
     }
@@ -373,7 +508,7 @@ class ProductsController extends ApiController {
         
         // Limit URL length
         $imageUrl = substr($imageUrl, 0, 500);
-        return $imageUrl;
+        return trim($imageUrl);
     }
     
     /**
@@ -393,11 +528,19 @@ class ProductsController extends ApiController {
         
         // Limit length
         $whatsappNumber = substr($whatsappNumber, 0, 20);
-        return $whatsappNumber;
+        return trim($whatsappNumber);
     }
 }
 
 // Process the request
-$controller = new ProductsController();
-$controller->processRequest();
+try {
+    $controller = new ProductsController();
+    $controller->processRequest();
+} catch (ChatCartException $e) {
+    error_log("ChatCart Unhandled API Error: " . $e->getMessage());
+    sendErrorResponse($e->getMessage(), $e->getCode(), $e->getAdditionalData(), $e->getContext());
+} catch (Exception $e) {
+    error_log("Unhandled API Error: " . $e->getMessage());
+    sendErrorResponse('Internal server error occurred', 500);
+}
 ?>

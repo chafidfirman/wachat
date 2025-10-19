@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fix Verification Tests</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container mt-5">
+        <h1>Fix Verification Tests</h1>
+        
+        <div class="row">
+            <div class="col-md-6">
+                <h2>Test 1: Product Data Structure</h2>
+                <div id="test1-result" class="alert alert-secondary">
+                    Checking product data structure...
+                </div>
+            </div>
+            
+            <div class="col-md-6">
+                <h2>Test 2: JavaScript Functions</h2>
+                <div id="test2-result" class="alert alert-secondary">
+                    Checking JavaScript functions...
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mt-4">
+            <div class="col-12">
+                <h2>Test 3: API Endpoint</h2>
+                <div id="test3-result" class="alert alert-secondary">
+                    Checking API endpoint...
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Test 1: Check product data structure
+        fetch('data/products.json')
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('test1-result');
+                if (Array.isArray(data) && data.length > 0) {
+                    const product = data[0];
+                    const requiredFields = ['id', 'name', 'price', 'category', 'image', 'inStock', 'stockQuantity', 'whatsappNumber'];
+                    const missingFields = requiredFields.filter(field => !(field in product));
+                    
+                    if (missingFields.length === 0) {
+                        resultDiv.className = 'alert alert-success';
+                        resultDiv.innerHTML = '✓ All required fields present in product data';
+                    } else {
+                        resultDiv.className = 'alert alert-warning';
+                        resultDiv.innerHTML = '⚠ Missing fields: ' + missingFields.join(', ');
+                    }
+                } else {
+                    resultDiv.className = 'alert alert-danger';
+                    resultDiv.innerHTML = '✗ Invalid product data format';
+                }
+            })
+            .catch(error => {
+                const resultDiv = document.getElementById('test1-result');
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = '✗ Error loading product data: ' + error.message;
+            });
+
+        // Test 2: Check JavaScript functions
+        document.addEventListener('DOMContentLoaded', function() {
+            const resultDiv = document.getElementById('test2-result');
+            const requiredFunctions = ['fetchProducts', 'renderProducts', 'orderViaWhatsApp'];
+            const missingFunctions = [];
+            
+            requiredFunctions.forEach(func => {
+                if (typeof window[func] !== 'function') {
+                    missingFunctions.push(func);
+                }
+            });
+            
+            if (missingFunctions.length === 0) {
+                resultDiv.className = 'alert alert-success';
+                resultDiv.innerHTML = '✓ All required JavaScript functions present';
+            } else {
+                resultDiv.className = 'alert alert-warning';
+                resultDiv.innerHTML = '⚠ Missing functions: ' + missingFunctions.join(', ');
+            }
+        });
+
+        // Test 3: Check API endpoint
+        fetch('api/products.php')
+            .then(response => response.json())
+            .then(data => {
+                const resultDiv = document.getElementById('test3-result');
+                if (Array.isArray(data) && data.length > 0) {
+                    const product = data[0];
+                    const requiredFields = ['id', 'name', 'price', 'category', 'image', 'inStock', 'stockQuantity', 'whatsappNumber'];
+                    const missingFields = requiredFields.filter(field => !(field in product));
+                    
+                    if (missingFields.length === 0) {
+                        resultDiv.className = 'alert alert-success';
+                        resultDiv.innerHTML = '✓ API returns correct data structure with ' + data.length + ' products';
+                    } else {
+                        resultDiv.className = 'alert alert-warning';
+                        resultDiv.innerHTML = '⚠ API missing fields: ' + missingFields.join(', ');
+                    }
+                } else {
+                    resultDiv.className = 'alert alert-danger';
+                    resultDiv.innerHTML = '✗ API returned invalid data';
+                }
+            })
+            .catch(error => {
+                const resultDiv = document.getElementById('test3-result');
+                resultDiv.className = 'alert alert-danger';
+                resultDiv.innerHTML = '✗ Error calling API: ' + error.message;
+            });
+    </script>
+</body>
+</html>
