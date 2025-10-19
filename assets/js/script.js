@@ -2,83 +2,6 @@
 let products = [];
 let categories = [];
 
-// Function to format price in IDR
-function formatPrice(price) {
-    return new Intl.NumberFormat('id-ID', {
-        style: 'currency',
-        currency: 'IDR'
-    }).format(price);
-}
-
-// Unified function to generate product card HTML
-function createProductCard(product, badgeType = '') {
-    // Use default image if no image is specified or if image is empty
-    const productImage = product.image && product.image.trim() !== '' 
-        ? product.image.startsWith('http') ? product.image : 'assets/' + product.image 
-        : 'assets/img/product-default.jpg';
-        
-    // Handle both data structures (JSON vs API)
-    const inStock = product.inStock !== undefined ? product.inStock : product.in_stock;
-    const stockQuantity = product.stockQuantity !== undefined ? product.stockQuantity : product.stock;
-    
-    // Determine stock status display
-    let stockStatus = '';
-    let stockClass = '';
-    
-    if (!inStock) {
-        stockStatus = 'Out of Stock';
-        stockClass = 'out-of-stock';
-    } else if (stockQuantity !== undefined && stockQuantity !== null) {
-        if (stockQuantity <= 0) {
-            stockStatus = 'Out of Stock';
-            stockClass = 'out-of-stock';
-        } else if (stockQuantity <= 5) {
-            stockStatus = `Only ${stockQuantity} left!`;
-            stockClass = 'low-stock';
-        } else {
-            stockStatus = `${stockQuantity} in stock`;
-        }
-    } else {
-        stockStatus = 'In Stock';
-    }
-        
-    // Determine badge text
-    let badgeText = '';
-    if (badgeType === 'limited') {
-        badgeText = stockQuantity <= 3 ? `SISA ${stockQuantity} PCS!` : 'LIMITED STOCK!';
-    } else if (badgeType === 'best-seller') {
-        badgeText = 'Best Seller';
-    }
-    
-    return `
-        <div class="product-card">
-            ${badgeText ? `<div class="product-badge ${badgeType}">${badgeText}</div>` : ''}
-            <div class="product-image">
-                <img src="${productImage}" alt="${product.name}" onerror="this.src='assets/img/product-default.jpg'">
-            </div>
-            <div class="product-info">
-                <h3>${product.name}</h3>
-                <div class="product-price">${formatPrice(product.price)}</div>
-                <div class="product-meta">
-                    <span class="${stockClass}">
-                        ${stockStatus}
-                    </span>
-                </div>
-                <div class="product-actions">
-                    <a href="product/${product.id}" class="action-btn detail-btn">
-                        <i class="fas fa-info-circle"></i> Detail
-                    </a>
-                    <button class="action-btn whatsapp-btn ${!inStock || (stockQuantity !== null && stockQuantity <= 0) ? 'out-of-stock-btn' : ''}" 
-                            onclick="orderViaWhatsApp(${product.id})"
-                            ${!inStock || (stockQuantity !== null && stockQuantity <= 0) ? 'disabled' : ''}>
-                        <i class="fab fa-whatsapp"></i> Chat & Beli
-                    </button>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
 // Function to show product detail in modal
 function showProductDetail(productId) {
     // Fetch products from API to get the latest data
@@ -172,43 +95,6 @@ function showProductDetail(productId) {
         }
     }).catch(error => {
         console.error('Error fetching product details:', error);
-    });
-}
-
-// Function to order via WhatsApp
-function orderViaWhatsApp(productId) {
-    // Fetch products from API to get the latest data
-    fetchProducts().then(fetchedProducts => {
-        const product = fetchedProducts.find(p => p.id == productId);
-        if (product) {
-            // Handle both data structures (JSON vs API)
-            const whatsappNumber = product.whatsappNumber !== undefined ? product.whatsappNumber : product.whatsapp_number;
-            const message = generateWhatsAppMessage(product, 1);
-            const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-            window.open(whatsappUrl, '_blank');
-        } else {
-            // If product not found in the fetched list, try to get it directly from the API
-            fetch(`api/v1/products/${productId}`)
-                .then(response => response.json())
-                .then(result => {
-                    if (result.success && result.data) {
-                        const product = result.data;
-                        const whatsappNumber = product.whatsappNumber !== undefined ? product.whatsappNumber : product.whatsapp_number;
-                        const message = generateWhatsAppMessage(product, 1);
-                        const whatsappUrl = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-                        window.open(whatsappUrl, '_blank');
-                    } else {
-                        alert('Product not found. Please try again.');
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching product details:', error);
-                    alert('Error fetching product details. Please try again.');
-                });
-        }
-    }).catch(error => {
-        console.error('Error fetching product details:', error);
-        alert('Error fetching product details. Please try again.');
     });
 }
 
