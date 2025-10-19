@@ -7,7 +7,7 @@
 require_once __DIR__ . '/../../../core/shared/ApiController.php';
 require_once __DIR__ . '/../../../core/shared/config/database.php';
 require_once __DIR__ . '/../../../core/shared/Database.php';
-require_once __DIR__ . '/../../../modules/product/models/Product.php';
+require_once __DIR__ . '/../../../modules/product/models/product.php';
 require_once __DIR__ . '/../../../modules/user/models/LogActivity.php';
 require_once __DIR__ . '/../../../core/shared/exceptions/ChatCartException.php';
 
